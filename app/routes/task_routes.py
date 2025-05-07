@@ -2,6 +2,7 @@ from flask import Blueprint, abort,make_response,request,Response
 from app.models.task import Task
 from ..db import db
 from datetime import datetime
+from sqlalchemy import asc, desc
 
 tasks_bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
 
@@ -33,7 +34,8 @@ def get_all_tasks():
     if description_param:
         query = query.where(Task.description.ilike(f"%{description_param}%"))
 
-    query = query.order_by(Task.id)
+    sort_param = request.args.get("sort")
+    query = query.order_by(get_sort_order(sort_param))
     
     tasks = db.session.scalars(query)
     tasks_response = [task.to_dict() for task in tasks]
@@ -92,3 +94,14 @@ def delete_task(task_id):
     db.session.commit()
 
     return Response(status=204, mimetype="application/json")
+
+def get_sort_order(sort_param):
+    if sort_param == "asc":
+        return Task.title.asc()
+    elif sort_param == "desc":
+        return Task.title.desc()
+    elif sort_param == "id":
+        return Task.id.asc()  
+    elif sort_param == "is_complete":
+        return Task.is_complete.asc()  
+    return Task.id
