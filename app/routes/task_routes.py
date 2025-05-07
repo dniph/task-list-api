@@ -11,15 +11,14 @@ def create_task():
 
     try:
         new_task = Task.from_dict(request_body)
-        
-    except KeyError as error:
-        response = {"message": f"Invalid request: missing {error.args[0]}"}
+    except KeyError:
+        response = {"details": "Invalid data"}
         abort(make_response(response, 400))
 
     db.session.add(new_task)
-    db.session.commit()
-
-    return new_task.to_dict(), 201
+    db.session.commit()  
+    
+    return {"task": new_task.to_dict()}, 201
 
 
 @tasks_bp.get("")
@@ -41,10 +40,10 @@ def get_all_tasks():
     return tasks_response
 
 @tasks_bp.get("/<task_id>")
+@tasks_bp.get("/<task_id>")
 def get_one_task(task_id):
     task = validate_task(task_id)
-
-    return task.to_dict()
+    return {"task": task.to_dict()}, 200
 
 def validate_task(task_id):
     try:
