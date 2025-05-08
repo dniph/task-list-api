@@ -3,7 +3,7 @@ from .db import db, migrate
 from .models import task, goal
 # from .routes.goal_routes import goals_bp
 from .routes.task_routes import bp as tasks_bp
-from .routes.task_routes import bp as goal_bp
+from .routes.goal_routes import bp as goals_bp
 import os
 from dotenv import load_dotenv
 
@@ -24,7 +24,6 @@ def create_app(config=None):
 
     # Register Blueprints here
     app.register_blueprint(tasks_bp)
-    app.register_blueprint(goal_bp)
-    # app.register_blueprint(goals_bp)
+    app.register_blueprint(goals_bp)
 
     return app

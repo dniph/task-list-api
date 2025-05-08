@@ -1,10 +1,12 @@
 from flask import abort, make_response
 from ..db import db
+from app.models.task import Task
+from app.models.goal import Goal
 
 def validate_model(cls, model_id):
     try:
         model_id = int(model_id)
-    except:
+    except (ValueError, TypeError):
         response = {"message": f"{cls.__name__} {model_id} invalid"}
         abort(make_response(response , 400))
 
