@@ -3,6 +3,7 @@ from app.models.task import Task
 from ..db import db
 from datetime import datetime
 from sqlalchemy import asc, desc
+from .route_utilities import validate_model
 
 tasks_bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
 
@@ -44,28 +45,15 @@ def get_all_tasks():
 @tasks_bp.get("/<task_id>")
 @tasks_bp.get("/<task_id>")
 def get_one_task(task_id):
-    task = validate_task(task_id)
+    task = validate_model(Task,task_id)
     return {"task": task.to_dict()}, 200
 
-def validate_task(task_id):
-    try:
-        task_id = int(task_id)
-    except:
-        response = {"message": f"task {task_id} invalid"}
-        abort(make_response(response , 400))
-
-    query = db.select(Task).where(Task.id == task_id)
-    task = db.session.scalar(query)
-    
-    if not task:
-        response = {"message": f"task {task_id} not found"}
-        abort(make_response(response, 404))
 
     return task
 
 @tasks_bp.put("/<task_id>")
 def update_task(task_id):
-    task = validate_task(task_id)
+    task = validate_model(Task,task_id)
     request_body = request.get_json()
 
     # Actualiza campos requeridos
@@ -89,11 +77,34 @@ def update_task(task_id):
 
 @tasks_bp.delete("/<task_id>")
 def delete_task(task_id):
-    task = validate_task(task_id)
+    task = validate_model(Task,task_id)
     db.session.delete(task)
     db.session.commit()
 
     return Response(status=204, mimetype="application/json")
+
+#wave 03 
+@tasks_bp.patch("/<task_id>/mark_complete")
+def mark_task_complete(task_id):
+    task = validate_model(Task, task_id)
+    
+    # Actualiza completed_at al momento actual (UTC)
+    task.completed_at = datetime.utcnow()
+    db.session.commit()
+    
+    return Response(status=204, mimetype="application/json")
+
+@tasks_bp.patch("/<task_id>/mark_incomplete")
+def mark_task_incomplete(task_id):
+    task = validate_model(Task, task_id)
+    
+    # Establece completed_at como None (incompleta)
+    task.completed_at = None
+    db.session.commit()
+    
+    return Response(status=204, mimetype="application/json")
+
+
 
 def get_sort_order(sort_param):
     if sort_param == "asc":
