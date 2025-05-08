@@ -1,9 +1,11 @@
-from flask import Blueprint, abort,make_response,request,Response
+from flask import Blueprint, abort,make_response, request, Response, current_app
 from app.models.task import Task
 from ..db import db
 from datetime import datetime
 from sqlalchemy import asc, desc
 from .route_utilities import validate_model
+import requests
+import os
 
 tasks_bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
 
@@ -42,14 +44,14 @@ def get_all_tasks():
     tasks_response = [task.to_dict() for task in tasks]
     return tasks_response
 
-@tasks_bp.get("/<task_id>")
+
 @tasks_bp.get("/<task_id>")
 def get_one_task(task_id):
     task = validate_model(Task,task_id)
     return {"task": task.to_dict()}, 200
 
 
-    return task
+    
 
 @tasks_bp.put("/<task_id>")
 def update_task(task_id):
@@ -84,27 +86,64 @@ def delete_task(task_id):
     return Response(status=204, mimetype="application/json")
 
 #wave 03 
+# @tasks_bp.patch("/<task_id>/mark_complete")
+# def mark_task_complete(task_id):
+#     task = validate_model(Task, task_id)
+    
+#     # Actualiza completed_at al momento actual (UTC)
+#     task.completed_at = datetime.utcnow()
+#     db.session.commit()
+    
+#     return Response(status=204, mimetype="application/json")
+
+# @tasks_bp.patch("/<task_id>/mark_incomplete")
+# def mark_task_incomplete(task_id):
+#     task = validate_model(Task, task_id)
+    
+#     # Establece completed_at como None (incompleta)
+#     task.completed_at = None
+#     db.session.commit()
+    
+#     return Response(status=204, mimetype="application/json")
+
+
+#Slack
 @tasks_bp.patch("/<task_id>/mark_complete")
 def mark_task_complete(task_id):
     task = validate_model(Task, task_id)
+    request_body = request.get_json()
     
-    # Actualiza completed_at al momento actual (UTC)
+    # Valida que el mensaje esté en el request
+    if not request_body or "slack_message" not in request_body:
+        abort(make_response({"error": "Field 'slack_message' is required"}, 400))  # 👈 Error claro
+    
+    # 1. Actualiza la tarea
     task.completed_at = datetime.utcnow()
     db.session.commit()
     
-    return Response(status=204, mimetype="application/json")
-
-@tasks_bp.patch("/<task_id>/mark_incomplete")
-def mark_task_incomplete(task_id):
-    task = validate_model(Task, task_id)
+    # 2. Envía el mensaje personalizado a Slack
+    slack_token = os.environ.get("SLACK_BOT_TOKEN")
+    channel = os.environ.get("SLACK_CHANNEL", "task-notifications")
     
-    # Establece completed_at como None (incompleta)
-    task.completed_at = None
-    db.session.commit()
+    if slack_token:
+        try:
+            response = requests.post(
+                "https://slack.com/api/chat.postMessage",
+                headers={
+                    "Authorization": f"Bearer {slack_token}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "channel": channel,
+                    "text": request_body["slack_message"]  
+                }
+            )
+            if not response.json().get("ok"):
+                current_app.logger.error(f"Slack API error: {response.json()}")
+        except Exception as e:
+            current_app.logger.error(f"Error sending to Slack: {str(e)}")
     
     return Response(status=204, mimetype="application/json")
-
-
 
 def get_sort_order(sort_param):
     if sort_param == "asc":

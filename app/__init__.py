@@ -4,8 +4,10 @@ from .models import task, goal
 # from .routes.goal_routes import goals_bp
 from .routes.task_routes import tasks_bp
 import os
+from dotenv import load_dotenv
 
 def create_app(config=None):
+    load_dotenv()
     app = Flask(__name__)
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
