@@ -1,5 +1,6 @@
 from flask import Blueprint, request, Response, abort, make_response
 from app.models.goal import Goal
+from app.models.task import Task
 from ..db import db
 from .route_utilities import validate_model
 
@@ -48,3 +49,45 @@ def delete_goal(goal_id):
     db.session.commit()
 
     return Response(status=204, mimetype="application/json")
+
+
+
+@bp.route("/<goal_id>/tasks", methods=["POST"])
+def assign_tasks_to_goal(goal_id):
+    goal = validate_model(Goal, goal_id)
+    request_body = request.get_json()
+
+    if not request_body or "task_ids" not in request_body:
+        abort(400, description={"details": "Invalid data"})
+
+    
+    new_tasks = []
+    for task_id in request_body["task_ids"]:
+        task = validate_model(Task, task_id)
+        new_tasks.append(task)
+
+    
+    for task in goal.tasks:
+        task.goal_id = None
+
+    for task in new_tasks:
+        task.goal_id = goal.id
+
+    db.session.commit()
+
+    return {
+        "id": goal.id,
+        "task_ids": request_body["task_ids"]
+    }, 200
+
+
+
+@bp.route("/<goal_id>/tasks", methods=["GET"])
+def get_tasks_for_goal(goal_id):
+    goal = validate_model(Goal, goal_id)
+    
+    return {
+        "id": goal.id,
+        "title": goal.title,
+        "tasks": [task.to_dict() for task in goal.tasks]
+    }, 200

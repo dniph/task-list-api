@@ -58,11 +58,11 @@ def update_task(task_id):
     task = validate_model(Task,task_id)
     request_body = request.get_json()
 
-    # Actualiza campos requeridos
+    
     task.title = request_body["title"]
     task.description = request_body["description"]
 
-    # Manejo de completed_at (puede venir como null o string en formato ISO)
+
     completed_at_value = request_body.get("completed_at")
     if completed_at_value:
         try:
@@ -71,7 +71,7 @@ def update_task(task_id):
             response = {"message": "Invalid datetime format for completed_at. Expected ISO 8601 format."}
             abort(make_response(response, 400))
     else:
-        task.completed_at = None  # Si es null o no se incluye
+        task.completed_at = None  
 
     db.session.commit()
 
@@ -95,15 +95,15 @@ def mark_task_complete(task_id):
     task = validate_model(Task, task_id)
     request_body = request.get_json()
     
-    # Valida que el mensaje esté en el request
+
     if not request_body or "slack_message" not in request_body:
         abort(make_response({"error": "Field 'slack_message' is required"}, 400))  # 👈 Error claro
     
-    # 1. Actualiza la tarea
+
     task.completed_at = datetime.utcnow()
     db.session.commit()
     
-    # 2. Envía el mensaje personalizado a Slack
+
     slack_token = os.environ.get("SLACK_BOT_TOKEN")
     channel = os.environ.get("SLACK_CHANNEL", "task-notifications")
     
