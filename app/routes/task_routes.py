@@ -7,9 +7,9 @@ from .route_utilities import validate_model
 import requests
 import os
 
-tasks_bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
+bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
 
-@tasks_bp.post("")
+@bp.post("")
 def create_task():
     request_body = request.get_json()
 
@@ -25,7 +25,7 @@ def create_task():
     return {"task": new_task.to_dict()}, 201
 
 
-@tasks_bp.get("")
+@bp.get("")
 def get_all_tasks():
     query = db.select(Task)
 
@@ -45,7 +45,7 @@ def get_all_tasks():
     return tasks_response
 
 
-@tasks_bp.get("/<task_id>")
+@bp.get("/<task_id>")
 def get_one_task(task_id):
     task = validate_model(Task,task_id)
     return {"task": task.to_dict()}, 200
@@ -53,7 +53,7 @@ def get_one_task(task_id):
 
     
 
-@tasks_bp.put("/<task_id>")
+@bp.put("/<task_id>")
 def update_task(task_id):
     task = validate_model(Task,task_id)
     request_body = request.get_json()
@@ -77,7 +77,7 @@ def update_task(task_id):
 
     return Response(status=204, mimetype="application/json")
 
-@tasks_bp.delete("/<task_id>")
+@bp.delete("/<task_id>")
 def delete_task(task_id):
     task = validate_model(Task,task_id)
     db.session.delete(task)
@@ -85,30 +85,12 @@ def delete_task(task_id):
 
     return Response(status=204, mimetype="application/json")
 
-#wave 03 
-# @tasks_bp.patch("/<task_id>/mark_complete")
-# def mark_task_complete(task_id):
-#     task = validate_model(Task, task_id)
-    
-#     # Actualiza completed_at al momento actual (UTC)
-#     task.completed_at = datetime.utcnow()
-#     db.session.commit()
-    
-#     return Response(status=204, mimetype="application/json")
 
-# @tasks_bp.patch("/<task_id>/mark_incomplete")
-# def mark_task_incomplete(task_id):
-#     task = validate_model(Task, task_id)
-    
-#     # Establece completed_at como None (incompleta)
-#     task.completed_at = None
-#     db.session.commit()
-    
-#     return Response(status=204, mimetype="application/json")
+
 
 
 #Slack
-@tasks_bp.patch("/<task_id>/mark_complete")
+@bp.patch("/<task_id>/mark_complete")
 def mark_task_complete(task_id):
     task = validate_model(Task, task_id)
     request_body = request.get_json()
