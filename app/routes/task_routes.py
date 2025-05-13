@@ -51,8 +51,6 @@ def get_one_task(task_id):
     return {"task": task.to_dict()}, 200
 
 
-    
-
 @bp.put("/<task_id>")
 def update_task(task_id):
     task = validate_model(Task,task_id)
@@ -77,6 +75,7 @@ def update_task(task_id):
 
     return Response(status=204, mimetype="application/json")
 
+
 @bp.delete("/<task_id>")
 def delete_task(task_id):
     task = validate_model(Task,task_id)
@@ -85,8 +84,6 @@ def delete_task(task_id):
 
     return Response(status=204, mimetype="application/json")
 
-
-#wave 03 
 
 @bp.patch("/<task_id>/mark_complete")
 def mark_task_complete(task_id):
@@ -117,7 +114,6 @@ def mark_task_complete(task_id):
     return Response(status=204, mimetype="application/json")
 
 
-
 @bp.patch("/<task_id>/mark_incomplete")
 def mark_task_incomplete(task_id):
     task = validate_model(Task, task_id)
@@ -126,8 +122,6 @@ def mark_task_incomplete(task_id):
     db.session.commit()
     
     return Response(status=204, mimetype="application/json")
-
-
 
 
 def get_sort_order(sort_param):
