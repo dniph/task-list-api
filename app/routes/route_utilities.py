@@ -12,6 +12,7 @@ def validate_model(cls, model_id):
     model = db.session.get(cls, model_id)
     
     if not model:
-        abort(make_response({"message": f"{cls.__name__} {model_id} not found"}, 404))
+        # Modificando el mensaje para que sea específico de la tarea
+        abort(make_response({"message": f"{cls.__name__.lower()} {model_id} not found"}, 404))
     
     return model

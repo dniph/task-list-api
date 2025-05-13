@@ -86,30 +86,21 @@ def delete_task(task_id):
     return Response(status=204, mimetype="application/json")
 
 
+#wave 03 
 
-
-
-#Slack
 @bp.patch("/<task_id>/mark_complete")
 def mark_task_complete(task_id):
     task = validate_model(Task, task_id)
-    request_body = request.get_json()
-    
-
-    if not request_body or "slack_message" not in request_body:
-        abort(make_response({"error": "Field 'slack_message' is required"}, 400))  # 👈 Error claro
-    
 
     task.completed_at = datetime.utcnow()
     db.session.commit()
-    
 
+    # Slack 
     slack_token = os.environ.get("SLACK_BOT_TOKEN")
     channel = os.environ.get("SLACK_CHANNEL", "task-notifications")
-    
     if slack_token:
         try:
-            response = requests.post(
+            requests.post(
                 "https://slack.com/api/chat.postMessage",
                 headers={
                     "Authorization": f"Bearer {slack_token}",
@@ -117,15 +108,27 @@ def mark_task_complete(task_id):
                 },
                 json={
                     "channel": channel,
-                    "text": request_body["slack_message"]  
+                    "text": f"Someone just completed the task {task.title}"
                 }
             )
-            if not response.json().get("ok"):
-                current_app.logger.error(f"Slack API error: {response.json()}")
         except Exception as e:
-            current_app.logger.error(f"Error sending to Slack: {str(e)}")
+            current_app.logger.error(f"Slack error: {e}")
+
+    return Response(status=204, mimetype="application/json")
+
+
+
+@bp.patch("/<task_id>/mark_incomplete")
+def mark_task_incomplete(task_id):
+    task = validate_model(Task, task_id)
+    
+    task.completed_at = None
+    db.session.commit()
     
     return Response(status=204, mimetype="application/json")
+
+
+
 
 def get_sort_order(sort_param):
     if sort_param == "asc":
